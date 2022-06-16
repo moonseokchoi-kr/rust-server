@@ -17,7 +17,7 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream){
     let mut buffer = [0; 2048];
-    let mut path = Path::new("./src/www/hello.html");
+    let path = Path::new("./src/www/");
 
     //stream으로 데이터를 읽어 buffer에 채운다
     //자꾸 여기서 버퍼 채우다 죽는다.. 원인이 뭐지..?
@@ -27,10 +27,20 @@ fn handle_connection(mut stream: TcpStream){
     //버퍼안에 저장된 데이터를 문자열로 바꾸어 출력한다.(debug)
     //println!("Request : {}", String::from_utf8_lossy(&buffer[..]));
 
-    let contents = fs::read_to_string(&mut path).unwrap();
+    //요청을 확인하고 routing 해주자
+    let get = b"GET / HTTP/1.1\r\n";
 
-    let response = format!("HTTP/1.1 200 OK\r\n\r\n{}",contents);
+    let (status_line, filename) = if buffer.starts_with(get){
+        ("HTTP/1.1 200 OK\r\n\r\n","hello.html")
+    }else{
+        ("HTTP/1.1 404 NOT FOUND\r\n", "404.html")
+    };
+
+    let html = path.join(filename);
+    let contents = fs::read_to_string(html).unwrap();
+    let response = format!("{}{}",status_line,contents);
 
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
+    
 }
