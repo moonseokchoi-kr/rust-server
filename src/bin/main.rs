@@ -2,19 +2,22 @@ use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
 use std::path::Path;
 use std::fs;
-use std::thread;
+use std::thread::{self, Thread};
 use std::time::Duration;
+use single_thread_server::ThreadPool;
 
 fn main() {
     //주어진 ip로 바인드, 바인드 중 문제가 생기면 중단
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-
+    let pool = ThreadPool::new(4);
     //연결된 데이터를 전달 받기 위해 stream 이용, 마찬가지로 문제 생기면 중단.
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-
-        //요청을 다루어보자
+        pool.excute(|| {
+        //요청을 다루어보자(closer)
         handle_connection(stream);
+        });
+
     }
 }
 
@@ -53,3 +56,4 @@ fn handle_connection(mut stream: TcpStream){
     stream.flush().unwrap();
 
 }
+
